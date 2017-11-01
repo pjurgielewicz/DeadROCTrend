@@ -1,5 +1,5 @@
 # DeadROCsByLS tool
-## What it does?
+## What does it do?
 The tool creates trends of dead ROCs in runs that were taken between specified dates. Besides lumisection trend you also have the hint which run it was with run labels on the top of the plot.
 
 The tool is also capable of stacking single layer/ring plots to create whole Barrel, Pixel and Tracker trend.
@@ -7,8 +7,8 @@ The tool is also capable of stacking single layer/ring plots to create whole Bar
 ## Configuration and running
 
 You need to modify ```config.py```:
-1. You need to have a decrypted version of your Grid Certificate Private Key. [Here is the tutorial how to do it](https://support.citrix.com/article/CTX122930)
-2. Modify ```cert_file_path``` and ```key_file_path``` so that they point to your certificate and private key.
+1. You need to have a decrypted version of your Grid Certificate Private Key. [Here is the tutorial how to do it.](https://support.citrix.com/article/CTX122930)
+2. Modify ```cert_file_path``` and ```key_file_path``` so that they point to your certificate and decrypted version of private key.
 3. Set the range of dates ```dateStart```, ```dateEnd```
 4. As an option you can change the size of output plots(```histWidth```, ```histHeight```), output directory(```outputDir```) and desired output file type(```fileType```)
 
