@@ -142,30 +142,65 @@ def PrintLabels(labelsDic):
     txt.DrawLatex(labelsDic[run] * 0.8 + 0.1, 0.8, str(run))
     
 ########################################
-# TODO: tricky part    
+# TODO: tricky part 
+# "select r.runnumber, r.recorded from wbm.lumisections_mini r where r.runnumber = 304366" --all
 def CreateLuminosityTrend(realRuns):
   minimum = min(realRuns)
   maximum = max(realRuns)
   
   api = RhApi(DEFAULT_URL, debug = False)
-        
+  #"select r.runnumber, r.recorded from wbm.lumisections_mini r where r.runnumber > 305500" --all
   queryPieces = ["r.runnumber >= :min",
                   "r.runnumber <= :max",
-                  "r.pixel_present = 1",
-                  "r.tracker_present = 1",
-                  "r.bpix_ready = 1",
-                  "r.fpix_ready = 1",
-                  "r.beam1_stable = 1", 
-                  "r.beam2_stable = 1",
-                  "r.run_test = 0" 
                   ]
-  q = "select r.runnumber, r.runlivelumi, r.duration from runreg_tracker.runs r where " + " and ".join(queryPieces) + " order by r.runnumber asc"
+  q = "select r.runnumber, r.lumisection, r.recorded from wbm.lumisections_mini r where " + " and ".join(queryPieces) + " order by r.runnumber asc"
   print(q)
   
   p = {"min" : str(minimum),
        "max" : str(maximum)}
   
-  runNumbers = api.json_all(q, p)
+  data = api.json_all(q, p)
+  # print("RAW from query")
+  # print(data)
+  
+  dataFiltered = {}
+  for d in data:
+    if d[0] in realRuns:
+      if d[0] in dataFiltered:
+        dataFiltered[d[0]].append(d[1:])
+      else:
+        dataFiltered.update({ d[0] : [d[1:]]})
+  
+  #INTEGRATE OVER 10 LUMISECTIONS (1 BIN = 10 LUMISECTIONS)
+  binning = 10
+  
+  for run in dataFiltered:
+    dataFiltered[run].sort(key=lambda x: x[0]) #sort by lumisection number
+  
+  # print("DATA FILTERED")
+  # print(dataFiltered)
+  
+  dataIntegrated = {}
+  for run in realRuns:
+    for i in range(0, len(dataFiltered[run]), binning):
+      # print(run, i)
+      subset = dataFiltered[run][i:i + binning] if (i + binning < len(dataFiltered[run])) else dataFiltered[run][i:]
+      subsetSum = sum([d[1] for d in subset])
+      
+      if run in dataIntegrated:
+        dataIntegrated[run].append(subsetSum)
+      else:
+        dataIntegrated.update({run : [subsetSum]})
+  
+  # print(dataIntegrated)
+  
+  #flatten data -> BIN VALUES
+  dataStream = []
+  for run in realRuns:
+    dataStream.extend(dataIntegrated[run])
+    
+  print("BIN NUM: %d" % (len(dataStream)) )
+  print(dataStream)
   
 #######################################################################################################################################
 
@@ -195,6 +230,9 @@ for run in runNumbers:
   except:
     print("Couldn't find: %d" % (run))
 
+# CreateLuminosityTrend(realRuns)
+# input("WAIT")
+    
 ### PREPARE LABELS 
 labelsDic = GetLabels(histogramDictionaryList[histogramNames[0]], realRuns)  
 listOfSingleLayerMergedHistograms = []
